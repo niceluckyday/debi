@@ -2,7 +2,7 @@
 
 [General description in English ↓](#introduction)
 
-## VPS 网络重装 Debian 11 脚本
+## VPS 网络重装  Debian 11  脚本
 
 **暂不支持 Oracle Linux 作为原系统。创建新机器时请选择 Ubuntu 20.04 或 18.04 系统模板。**
 
