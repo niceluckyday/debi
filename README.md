@@ -129,6 +129,7 @@ Otherwise, you can run this command to revert all changes made by the script:
  * `--no-force-gpt` By default, GPT rather than MBR partition table will be created. This option disables it.
  * `--bios` Don't create *EFI system partition*. If GPT is being used, create a *BIOS boot partition* (`bios_grub` partition). Default if `/sys/firmware/efi` is absent. [See](https://askubuntu.com/a/501360)
  * `--efi` Create an *EFI system partition*. Default if `/sys/firmware/efi` exists
+ * `--esp 106` Size of the *EFI system partition*. e.g. `106`, `538` and `1075` result to 100 MiB, 512 MiB, 1 GiB respectively
  * `--filesystem ext4`
  * `--kernel <string>` Choose an package for the kernel image
  * `--cloud-kernel` Choose `linux-image-cloud-amd64` or `...arm64` as the kernel image
@@ -143,7 +144,6 @@ Otherwise, you can run this command to revert all changes made by the script:
  * `--hold` Don't reboot or power off after installation
  * `--power-off` Power off after installation rather than reboot
  * `--architecture <string>` e.g. `amd64`, `i386`, `arm64`, `armhf`, etc.
- * `--boot-directory <string>` Automatically set to `/` if there is an individual boot partition otherwise set to `/boot`. You can try to treak this if needed (for example setting subvolume for btrfs)
  * `--firmware` Load additional [non-free firmwares](https://wiki.debian.org/Firmware#Firmware_during_the_installation)
  * `--no-force-efi-extra-removable` [See](https://wiki.debian.org/UEFI#Force_grub-efi_installation_to_the_removable_media_path)
  * `--grub-timeout 5` How many seconds the GRUB menu shows before entering the installer

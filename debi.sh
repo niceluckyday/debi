@@ -219,6 +219,7 @@ disk_partitioning=true
 disk=
 force_gpt=true
 efi=
+esp=106
 filesystem=ext4
 kernel=
 cloud_kernel=false
@@ -232,7 +233,6 @@ ssh_port=
 hold=false
 power_off=false
 architecture=
-boot_directory=
 firmware=false
 force_efi_extra_removable=true
 grub_timeout=5
@@ -361,6 +361,10 @@ while [ $# -gt 0 ]; do
         --efi)
             efi=true
             ;;
+        --esp)
+            esp=$2
+            shift
+            ;;
         --filesystem)
             filesystem=$2
             shift
@@ -411,10 +415,6 @@ while [ $# -gt 0 ]; do
             architecture=$2
             shift
             ;;
-        --boot-directory)
-            boot_directory=$2
-            shift
-            ;;
         --firmware)
             firmware=true
             ;;
@@ -462,8 +462,7 @@ done
 [ -n "$authorized_keys_url" ] && ! download "$authorized_keys_url" /dev/null &&
 err "Failed to download SSH authorized public keys from \"$authorized_keys_url\""
 
-installer="debian-$suite"
-installer_directory="/boot/$installer"
+installer_directory="/boot/debian-$suite"
 
 save_preseed='cat'
 [ "$dry_run" = false ] && {
@@ -664,8 +663,10 @@ d-i partman-auto/expert_recipe string \
     naive :: \
 EOF
     if [ "$efi" = true ]; then
+        $save_preseed << EOF
+        $esp $esp $esp free \\
+EOF
         $save_preseed << 'EOF'
-        106 106 106 free \
             $iflabel{ gpt } \
             $reusemethod{ } \
             method{ efi } \
@@ -744,8 +745,13 @@ popularity-contest popularity-contest/participate boolean false
 
 # Boot loader installation
 
-d-i grub-installer/bootdev string default
 EOF
+
+if [ -n "$disk" ]; then
+    echo "d-i grub-installer/bootdev string $disk" | $save_preseed
+else
+    echo 'd-i grub-installer/bootdev string default' | $save_preseed
+fi
 
 [ "$force_efi_extra_removable" = true ] && echo 'd-i grub-installer/force-efi-extra-removable boolean true' | $save_preseed
 [ -n "$kernel_params" ] && echo "d-i debian-installer/add-kernel-opts string$kernel_params" | $save_preseed
@@ -806,15 +812,13 @@ EOF
     save_grub_cfg="tee -a $grub_cfg"
 }
 
-[ -z "$boot_directory" ] && {
-    if grep -q '\s/boot\s' /proc/mounts; then
-        boot_directory=/
-    else
-        boot_directory=/boot/
-    fi
+mkrelpath=$installer_directory
+[ "$dry_run" = true ] && mkrelpath=/boot
+installer_directory=$(grub-mkrelpath "$mkrelpath" 2> /dev/null) ||
+installer_directory=$(grub2-mkrelpath "$mkrelpath" 2> /dev/null) || {
+    err 'Could not find "grub-mkrelpath" or "grub2-mkrelpath" command'
 }
-
-installer_directory="$boot_directory$installer"
+[ "$dry_run" = true ] && installer_directory="$installer_directory/debian-$suite"
 
 kernel_params="$kernel_params lowmem/low=1"
 
@@ -827,6 +831,7 @@ menuentry 'Debian Installer' --id debi {
     insmod part_gpt
     insmod ext2
     insmod xfs
+    insmod btrfs
     linux $installer_directory/linux$kernel_params
     initrd $initrd
 }
